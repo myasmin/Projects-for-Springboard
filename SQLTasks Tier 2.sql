@@ -151,12 +151,46 @@ QUESTIONS:
 The output of facility name and total revenue, sorted by revenue. Remember
 that there's a different cost for guests and members! */
 
+SELECT subquery.name, subquery.revenue
+FROM
+	(SELECT f.name, SUM(
+	CASE WHEN b.memid =0 THEN b.slots * f.guestcost
+		 ELSE b.slots * f.membercost END ) AS revenue
+	FROM `Facilities` AS f
+		INNER JOIN `Bookings` AS b 
+		ON f.facid = b.facid
+	GROUP BY f.name) AS subquery
+
+WHERE subquery.revenue < 1000
+ORDER BY subquery.revenue
+
 
 /* Q11: Produce a report of members and who recommended them in alphabetic surname,firstname order */
+
+
+SELECT m.memid, m.surname, m.firstname, (r.firstname || ' ' || r.surname) AS recommender
+FROM `Members` AS m
+INNER JOIN `Members` AS r
+ON m.recommendedby = r.memid
+WHERE m.memid != 0
+ORDER BY m.surname, m.firstname
 
 
 /* Q12: Find the facilities with their usage by member, but not guests */
 
 
+SELECT b.facid, f.name, SUM( b.slots ) AS usage_by_member
+FROM `Bookings` AS b
+INNER JOIN `Facilities` AS f ON b.facid = f.facid
+WHERE b.memid !=0
+GROUP BY b.facid
+
+
 /* Q13: Find the facilities usage by month, but not guests */
 
+SELECT b.facid, f.name, strftime('%m', b.starttime) as month, SUM(b.slots) AS usage_by_month
+FROM `Bookings` AS b
+INNER JOIN `Facilities` AS f 
+ON b.facid = f.facid
+WHERE b.memid !=0
+GROUP BY b.facid, month
